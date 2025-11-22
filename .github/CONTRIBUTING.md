@@ -22,14 +22,10 @@ If you're developing on a Runpod Pod - thank you for using Runpod! - run the han
 
 ```bash
 uv sync
-python -m juno.handler --rp_serve_api
+python -m juno.handler --rp_serve_api --rp_api_host 0.0.0.0
 ```
 
-Make sure you have a spare HTTP port exposed on your Pod. You may have something running on port `8000`. Use `--rp_api_port` to specify a port:
-
-```bash
-python -m juno.handler --rp_serve_api --rp_api_port 8000
-```
+Use `--rp_api_port <PORT>` to set the HTTP port (default is 8000).
 
 ## Adding Configuration
 

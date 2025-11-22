@@ -5,14 +5,16 @@ FROM runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
 LABEL org.opencontainers.image.source=https://github.com/dejaydev/juno-handler
 LABEL org.opencontainers.image.description="The Juno Runpod handler, my ideal vLLM worker and Dockerfile for building a beautiful image."
 LABEL org.opencontainers.image.licenses=MIT
-
-# Pick a folder, call it whatever you want - we call this project Juno.
-WORKDIR /opt/juno
+# This is the location of the network volume for serverless endpoints.
+ENV RP_WORKSPACE=/runpod-volume
 
 # NOTICE: This variable will cause uv sync to uninstall system dependencies that are not in the pyproject.toml file.
 # This includes Jupyter, which is installed by default in the base image. 
-# You can avoid this by unsetting UV_PROJECT_ENVIRONMENT for a venv or switching to pip to manage system packages.
+# You can avoid this by unsetting UV_PROJECT_ENVIRONMENT to use a venv or switching to pip to manage system packages.
 ENV UV_PROJECT_ENVIRONMENT=/usr/local
+
+# Pick a folder, call it whatever you want - we call this project Juno.
+WORKDIR /opt/juno
 
 COPY pyproject.toml uv.lock ./
 

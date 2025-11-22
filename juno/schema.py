@@ -1,7 +1,13 @@
 VALIDATIONS = {
     "messages": {
         "type": list,
-        "required": True,
+        "required": False,
+        "default": None,
+    },
+    "prompt": {
+        "type": str,
+        "required": False,
+        "default": None,
     },
     "temperature": {
         "type": float,
@@ -22,10 +28,5 @@ VALIDATIONS = {
         "type": list,
         "required": False,
         "default": None,
-    },
-    "tool_choice": {
-        "type": object,
-        "required": False,
-        "default": None,
-    },
+    }
 }

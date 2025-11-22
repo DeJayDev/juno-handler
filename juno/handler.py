@@ -15,11 +15,11 @@ TOKENIZER = os.getenv("MODEL_TOKENIZER")
 CONFIG_FORMAT = os.getenv("MODEL_CONFIG_FORMAT")
 LOAD_FORMAT = os.getenv("MODEL_LOAD_FORMAT")
 QUANTIZATION = os.getenv("MODEL_QUANTIZATION")
-MAX_MODEL_LEN = os.getenv("MODEL_MAX_LEN")
+MAX_MODEL_LEN = int(os.getenv("MODEL_MAX_LEN") or "8192")
 
-DEFAULT_TEMPERATURE = float(os.getenv("MODEL_TEMPERATURE", "0.15"))
-DEFAULT_MAX_TOKENS = int(os.getenv("MAX_SAMPLING_TOKENS", "32768"))
-DEFAULT_TOP_P = float(os.getenv("TOP_P", "0.95"))
+DEFAULT_TEMPERATURE = float(os.getenv("MODEL_TEMPERATURE") or "0.15")
+DEFAULT_MAX_TOKENS = int(os.getenv("MAX_SAMPLING_TOKENS") or "32768")
+DEFAULT_TOP_P = float(os.getenv("TOP_P") or "0.95")
 
 if not MODEL:
     print("Define a MODEL_NAME...")
@@ -29,13 +29,13 @@ log.info("Loading {}...".format(MODEL))
 
 model = LLM(
     model=MODEL,
-    tokenizer_mode=TOKENIZER if TOKENIZER else "auto",
-    config_format=CONFIG_FORMAT if CONFIG_FORMAT else "auto",
-    load_format=LOAD_FORMAT if LOAD_FORMAT else "auto",
-    quantization=QUANTIZATION if QUANTIZATION else None,
-    max_model_len=int(MAX_MODEL_LEN) if MAX_MODEL_LEN else None,
-    tensor_parallel_size=int(os.getenv("RUNPOD_GPU_COUNT", "1")),
-    gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION", "0.9")),
+    tokenizer_mode=TOKENIZER or "auto",
+    config_format=CONFIG_FORMAT or "auto",
+    load_format=LOAD_FORMAT or "auto",
+    quantization=QUANTIZATION,
+    max_model_len=MAX_MODEL_LEN,
+    tensor_parallel_size=int(os.getenv("RUNPOD_GPU_COUNT") or "1"),
+    gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION") or "0.9"),
 )
 
 
@@ -46,9 +46,20 @@ def handler(job):
         return {"error": input_validation["errors"]}
     job_input = input_validation["validated_input"]
 
+    messages = job_input.get("messages")
+    prompt = job_input.get("prompt")
     temperature = job_input.get("temperature")
     max_tokens = job_input.get("max_tokens")
     top_p = job_input.get("top_p")
+
+    if messages and prompt:
+        return {"error": "Provide either 'messages' or 'prompt', not both"}
+    
+    if not messages and not prompt:
+        return {"error": "Either 'messages' or 'prompt' is required"}
+    
+    if prompt:
+        job_input["messages"] = [{"role": "user", "content": prompt}]
     
     sampler = SamplingParams(
         temperature=temperature if temperature is not None else DEFAULT_TEMPERATURE,
@@ -66,21 +77,24 @@ def handler(job):
 
     result = model_output[0]
     output = result.outputs[0]
-    
+
     text = output.text
     reasoning_content = None
-    
+
     think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
     if think_match:
         reasoning_content = think_match.group(1).strip()
         text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
-    
+
     message = {
         "role": "assistant",
         "reasoning_content": reasoning_content,
         "content": text,
     }
-    
+
+    if hasattr(output, 'tool_calls') and output.tool_calls:
+        message["tool_calls"] = output.tool_calls
+
     return {
         "id": os.getenv("RUNPOD_REQUEST_ID") or f"rp-{uuid.uuid4().hex[:8]}",
         "object": "chat.completion",
