@@ -125,6 +125,5 @@ if __name__ == '__main__':
         gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION") or "0.8"),
     )
 
-    
-
+    runpod.serverless.start({"handler": handler})
     runpod.serverless.start({"handler": handler})
