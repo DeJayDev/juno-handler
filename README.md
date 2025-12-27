@@ -114,18 +114,32 @@ response = client.chat.completions.create(
 **Required:**
 - `MODEL_NAME` - HuggingFace model identifier
 
-**Optional model settings:**
-- `MODEL_QUANTIZATION` - awq, gptq, fp8 (valid vLLM arguments)
-- `MODEL_MAX_LEN` - Maximum context length in tokens (controls KV cache allocation)
-- `MODEL_TOKENIZER`, `MODEL_CONFIG_FORMAT`, `MODEL_LOAD_FORMAT` - only if your model needs them/vllm can't guess it
+**Model settings:**
+- `MODEL_DTYPE` - Data type (`float16`, `bfloat16`, `auto`, etc.)
+- `MODEL_QUANTIZATION` - Quantization method (`awq`, `gptq`, `fp8`)
+- `MODEL_TRUST_REMOTE_CODE` - Allow custom model code (`true`, `1`, `yes` to enable)
+- `MODEL_TOKENIZER` - Tokenizer mode (default: `auto`)
+- `MODEL_CONFIG_FORMAT` - Config format (default: `auto`)
+- `MODEL_LOAD_FORMAT` - Load format (default: `auto`)
 
-**Generation settings:**
+**Limits:**
+- `MODEL_MAX_LEN` - Maximum context length in tokens
+- `MODEL_MAX_NUM_SEQS` - Maximum sequences per iteration
+
+**Generation defaults:**
 - `MODEL_TEMPERATURE` (default: 0.15)
-- `MAX_SAMPLING_TOKENS` (default: 32768)
-- `TOP_P` (default: 0.95)
+- `MODEL_MAX_TOKENS` (default: 32768)
+- `MODEL_TOP_P` (default: 0.95)
 
 **Runtime:**
-- `GPU_MEMORY_UTILIZATION` (default: 0.9)
+- `GPU_MEMORY_UTILIZATION` (default: 0.8)
+- `DISTRIBUTED_EXECUTOR_BACKEND` - Execution backend (`ray`, `mp`, `uni`)
+
+**(Optional) Cache persistence:**
+- `TORCH_HOME` - PyTorch cache directory (e.g. `/runpod-volume/.cache/torch`)
+- `HF_HOME` - HuggingFace cache directory (e.g. `/runpod-volume/.cache/huggingface`)
+
+Setting these to a network volume path persists compiled extensions and model weights across worker restarts, reducing cold start times.
 
 ## Models
 

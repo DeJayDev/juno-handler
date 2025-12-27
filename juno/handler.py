@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import time
 import uuid
 
@@ -11,15 +12,20 @@ from vllm import LLM, SamplingParams
 from juno.schema import VALIDATIONS
 
 MODEL = os.getenv("MODEL_NAME")
+DTYPE = os.getenv("MODEL_DTYPE")
+QUANTIZATION = os.getenv("MODEL_QUANTIZATION")
+TRUST_REMOTE_CODE = os.getenv("MODEL_TRUST_REMOTE_CODE", "").lower() in ("true", "1", "yes")
 TOKENIZER = os.getenv("MODEL_TOKENIZER")
 CONFIG_FORMAT = os.getenv("MODEL_CONFIG_FORMAT")
 LOAD_FORMAT = os.getenv("MODEL_LOAD_FORMAT")
-QUANTIZATION = os.getenv("MODEL_QUANTIZATION")
+
 MAX_MODEL_LEN = int(os.getenv("MODEL_MAX_LEN")) if os.getenv("MODEL_MAX_LEN") else None
+MAX_NUM_SEQS = int(os.getenv("MODEL_MAX_NUM_SEQS")) if os.getenv("MODEL_MAX_NUM_SEQS") else None
+DISTRIBUTED_EXECUTOR_BACKEND = os.getenv("DISTRIBUTED_EXECUTOR_BACKEND")
 
 DEFAULT_TEMPERATURE = float(os.getenv("MODEL_TEMPERATURE") or "0.15")
-DEFAULT_MAX_TOKENS = int(os.getenv("MAX_SAMPLING_TOKENS") or "32768")
-DEFAULT_TOP_P = float(os.getenv("TOP_P") or "0.95")
+DEFAULT_MAX_TOKENS = int(os.getenv("MODEL_MAX_TOKENS") or "32768")
+DEFAULT_TOP_P = float(os.getenv("MODEL_TOP_P") or "0.95")
 
 model = None
 
@@ -100,7 +106,7 @@ def handler(job):
 if __name__ == '__main__':
     if not MODEL:
         print("Define a MODEL_NAME...")
-        os._exit(-1)
+        sys.exit(1)
 
     log.info("Loading {}...".format(MODEL))
 
@@ -111,8 +117,13 @@ if __name__ == '__main__':
         load_format=LOAD_FORMAT or "auto",
         quantization=QUANTIZATION,
         max_model_len=MAX_MODEL_LEN,
+        dtype=DTYPE or "auto",
+        trust_remote_code=TRUST_REMOTE_CODE,
+        max_num_seqs=MAX_NUM_SEQS,
+        distributed_executor_backend=DISTRIBUTED_EXECUTOR_BACKEND,
         tensor_parallel_size=int(os.getenv("RUNPOD_GPU_COUNT") or "1"),
         gpu_memory_utilization=float(os.getenv("GPU_MEMORY_UTILIZATION") or "0.8"),
     )
 
+    runpod.serverless.start({"handler": handler})
     runpod.serverless.start({"handler": handler})

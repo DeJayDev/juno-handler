@@ -34,6 +34,10 @@ When adding new environment variables:
 - Prefix model-specific settings with `MODEL_`
 - Provide sane defaults or `None` to let vLLM handle it
 
+## Model Agnosticism
+
+Juno Handler is model-agnostic. Please, never assume users are running any specific model, model family, or model type. Code and documentation should work for any vLLM-compatible model.
+
 ## AI Contribution Honesty Policy
 
 While I think headless coding agents are silly, I do welcome AI-generated code, issues, and PRs. 
